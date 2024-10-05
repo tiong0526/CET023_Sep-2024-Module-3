@@ -1,9 +1,12 @@
 from flask import Flask,render_template,request
 import google.generativeai as genai
 import os
+import numpy as np
+import textblob
 
 model = genai.GenerativeModel("gemini-1.5-flash")
-genai.configure(api_key="AIzaSyCFIL-2qRWHrUqzyf_TN3A5IKQsVgB2zHg")
+api = os.getenv("MAKERSUITE")
+genai.configure(api_key=api)
 
 app = Flask(__name__)
 
@@ -21,6 +24,27 @@ def prediction_result_DBS():
     r = (-50.6 * q) + 90.2
     return(render_template("prediction_result_DBS.html",r=r))
 
+@app.route("/predict_creditability",methods=["GET","POST"])
+def predict_creditability():
+    return(render_template("predict_creditability.html"))
+
+@app.route("/predict_result",methods=["GET","POST"])
+def predict_result_creditability():
+    q = float(request.form.get("q"))
+    r = (-9.34111523e-05 * q) + 1.15201551
+    r = np.where(r>=0.5,"Creditable", "Not Creditable")
+    return(render_template("predict_result.html",r=r))
+
+@app.route("/sentiment_analysis",methods=["GET","POST"])
+def sentiment_analysis():
+    return(render_template("sentiment_analysis.html"))
+
+@app.route("/sentiment_analysis_result",methods=["GET","POST"])
+def sentiment_analysis_result():
+    q = request.form.get("q")
+    r = textblob.TextBlob(q).sentiment
+    return(render_template("sentiment_analysis_result.html",r=r))
+
 @app.route("/faq",methods=["GET","POST"])
 def faq():
     return(render_template("faq.html"))
@@ -36,20 +60,5 @@ def q2():
     r = model.generate_content(q)
     return(render_template("q2_reply.html",r=r))
 
-@app.route("/predict_creditability", methods=["GET", "POST"])
-def predict_creditability():
-    q = request.form.get("q")  # Retrieve input value
-    if q:
-        try:
-            q = float(q)
-            r = (-0.00012486 * q) + 1.27724011  # Corrected formula (removed the opening bracket)
-            return render_template("predict_result.html", r=r)  # Pass result to template
-        except ValueError:
-            return render_template("predict_creditability.html", r="Invalid input")  # Handle conversion error
-    else:
-        return render_template("predict_creditability.html", r="No input provided")  # Handle missing input
-
-
 if __name__ == "__main__":
     app.run()
-    
